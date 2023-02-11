@@ -1,14 +1,21 @@
 # GPTerm
 
-Interact with OpenAI's GPT-3 models via a terminal on macOS.
+Interact and chat with OpenAI's GPT-3 models via an REPL terminal emulation on macOS.
+Including voiced output, image generation and model selection.
+
+<br>
+
+<img width="640" alt="gpterm" src="https://user-images.githubusercontent.com/125149025/219539378-2dad2363-a3bf-4335-ba4a-201bb1622951.png">
 
 ## Installation
+
+To install GPTerm, simply execute the following command in your terminal:
 
 ```sh
 pip3 install --upgrade gpterm
 ```
 
-> **_NOTE:_** GPTerm works best when installed and run under a [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) environment. See [Known Issues](#known-issues)
+> **_Note:_** GPTerm works best when installed and run under a [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) environment. See [Known Issues](#known-issues)
 > 
 > To install under conda (after installing anaconda or miniconda):
 > ```sh
@@ -23,7 +30,7 @@ pip3 install --upgrade gpterm
 gpterm
 ```
 
-> **_NOTE:_** GPTerm uses the OpenAI API which requires an [OpenAI API Key](https://platform.openai.com/account/api-keys)
+> **_Note:_** GPTerm uses the OpenAI API which requires an [OpenAI API Key](https://platform.openai.com/account/api-keys)
 >
 
 * **Setting an OpenAI API Key:** 
@@ -51,7 +58,7 @@ gpterm
 
   For the best experience a terminal with a **dark** background theme is recommended. (*Like the one provided by [iTerm](https://iterm2.com/)*)
   
-  If you are using a light background terminal start gpterm with the following flag:
+  However, if you are using a light background terminal start gpterm with the following flag:
 
   `--theme light`
 
@@ -64,15 +71,15 @@ GPTerm provides the following features as supported by OpenAI's API:
 * Streamed output
 * Multiline input
 * Preserves conversation context including the option to reset it
-* Voiced output using the macOS **say** command (with a variety of voices to choose from)
+* Voiced output using text to speech (with a variety of voices to choose from)
 * Image Generation using a DALL·E model (*note that as the saying goes an image is worth a thousand tokens...*)
 * Model-3 selection and parameters
-* Displays number of remaining tokens for current conversation context before its reset (Due to `max_tokens` limited by OpenAI's API)
+* Displays number of remaining tokens for current conversation context before it is reset (Due to `max_tokens` limited by OpenAI's API)
 * Code blocks formatted with Syntax highlighting (experimental)
 
 
 
 ### Known Issues
 
-* Tab completion doesn't seem to work well in the **readline** module that comes with native python. The [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) environment includes a python binary which includes a readline module that supports tab completion.
+* Tab completion doesn't seem to work well in the **readline** module that comes with native python. The [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) environment includes a python binary with a readline module that does support it.
 

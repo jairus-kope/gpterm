@@ -82,7 +82,7 @@ class GptTerminal:
         self.chars_per_token = 1
 
     def _setup_code_format(self):
-        self.code_format_directive = "\nAny code snippet in your responses must be inside a code block. respond yes if you'll compy"
+        self.code_format_directive = "\nAny code snippet in your responses must be inside a code block. respond yes if you will comply"
         self.code_lang = "python"
         self.code_syntax_theme = 'github-dark'  # rich.syntax.DEFAULT_THEME
         self.code_line_numbers = False
