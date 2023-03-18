@@ -1,6 +1,7 @@
 import os
 import yaml
-from gpterm.enums import ThemeMode, VoiceStop, GptModel
+from gpterm.enums import ThemeMode, VoiceStop
+from gpterm.utils import model_from_alias
 
 
 class Config:
@@ -19,7 +20,7 @@ class Config:
         self.image_size = 256
         self.image_view = True
         self.image_store = Config.DEFAULT_IMAGE_STORE_PATH
-        self.model = GptModel.davinci
+        self.model = model_from_alias('chatgpt')
         self.temperature = 0.75
 
     def load(self):
@@ -41,7 +42,7 @@ class Config:
                     self.image_view = loaded_cfg.get('image_view', self.image_view)
                     self.image_store = loaded_cfg.get('image_store', self.image_store)
                     if 'model' in loaded_cfg:
-                        self.model = GptModel[loaded_cfg['model']]
+                        self.model = model_from_alias(loaded_cfg['model'])
                     self.temperature = loaded_cfg.get('temperature', self.temperature)
             except Exception as e:
                 print(f"Error loading {self.file_path}: {e}")
@@ -57,7 +58,7 @@ class Config:
                      'image_size': self.image_size,
                      'image_view': self.image_view,
                      'image_store': self.image_store,
-                     'model': self.model.name,
+                     'model': self.model,
                      'temperature': self.temperature,
                      }
 

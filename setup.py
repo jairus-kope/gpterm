@@ -14,7 +14,7 @@ setup(
     url="https://github.com/jairus-kope/gpterm",
     packages=find_packages(),
     install_requires=[
-        'openai>=0.26.4',
+        'openai>=0.27.2',
         'rich>=13.3.1',
         'pyyaml>=6.0',
     ],
@@ -26,7 +26,7 @@ setup(
     python_requires='>=3.9.6',
     entry_points={
         "console_scripts": [
-            "gpterm = gpterm.gpterm:gpterm_main"
+            "gpterm = gpterm.gpt_terminal:gpterm_main"
         ]
     },
 )

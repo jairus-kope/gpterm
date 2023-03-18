@@ -3,8 +3,9 @@ import sys
 import readline
 import cmd
 import enum
-from gpterm.enums import ThemeMode, VoiceStop, GptModel
+from gpterm.enums import ThemeMode, VoiceStop
 from gpterm.config import Config
+from gpterm.utils import model_from_alias, alias_for_model, model_name_for_print
 
 
 class ShellHandler(cmd.Cmd):
@@ -175,13 +176,13 @@ class ShellHandler(cmd.Cmd):
         return msg
 
     def handle_model(self, command):
-        models = [e.name for e in GptModel]
-        msg = f"Command format: /model <{'|'.join(models)}>"
-        if len(command) == 2 and command[1] in models:
-            self.gpterm.cfg.model = GptModel[command[1]]
+        msg = f"Command format: /model <mode_name>\nCurrent model: {model_name_for_print(self.gpterm.cfg.model)}"
+        if len(command) == 2:
+            self.gpterm.cfg.model = model_from_alias(command[1])
+            msg = self.handle_reset(None)
             self.gpterm.calc_max_tokens()
             self.gpterm.update_shell_prompt()
-            msg = f"GPT-3 Model set to '{self.gpterm.cfg.model.name}'"
+            msg += f"\nGPT Model set to {model_name_for_print(self.gpterm.cfg.model)}"
         return msg
 
     def handle_temperature(self, command):
@@ -287,19 +288,22 @@ class ShellHandler(cmd.Cmd):
         for k, v in gpterm_commands.items():
             if v.setting is None:
                 state = "\t"
-                tab = "\t"
+                tab1 = "\t"
+                tab2 = "\t"
             elif isinstance(v.setting, enum.Enum):
                 val_text = v.setting.name
                 state = f"= [{self.gpterm.colors.cinfo}]{val_text}[/]"
-                tab = '\t' if len(val_text) < 8 else ''
+                tab1 = '\t' if len(val_text) < 8 else ''
+                tab2 = '\t' if len(val_text) < 16 else ''
             else:
                 val_text = str(v.setting)
                 state = f"= {val_text}"
-                tab = '\t' if len(val_text) < 8 else ''
-            msg += f"{k:<{key_len}} {state}\t{tab} # {v.description}\n"
+                tab1 = '\t' if len(val_text) < 8 else ''
+                tab2 = '\t' if len(val_text) < 16 else ''
+            msg += f"{k:<{key_len}} {state}\t{tab1}{tab2} # {v.description}\n"
         if advanced:
             color = "#ff77ff" if self.gpterm.cfg.color_theme == ThemeMode.dark else "#ff00ff"
-            msg += "!<shell_command>\t\t # Run a shell command\n"
-            msg += f"[{color}]cmd+k[/]\t\t\t\t # Clear the screen\n"
-            msg += f"[{color}]ctrl+c[/]\t\t\t\t # Exit GPTerm or abort a GPT response\n"
+            msg += "!<shell_command>\t\t\t # Run a shell command\n"
+            msg += f"[{color}]cmd+k[/]\t\t\t\t\t # Clear the screen\n"
+            msg += f"[{color}]ctrl+c[/]\t\t\t\t\t # Exit GPTerm or abort a GPT response\n"
         return msg.rstrip()

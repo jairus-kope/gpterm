@@ -15,7 +15,8 @@ from collections import namedtuple
 from urllib import request
 from gpterm.config import Config
 from gpterm.shell import ShellHandler
-from gpterm.enums import ThemeColors, Colors, ThemeMode, GptModel, VoiceStop
+from gpterm.enums import ThemeColors, Colors, ThemeMode, VoiceStop
+from gpterm.utils import alias_for_model
 
 
 class GptTerminal:
@@ -36,6 +37,7 @@ class GptTerminal:
         self.first_sentence = True
         self.in_gpt_response = False
         self.abort_response = False
+        self.after_reset = True
         self.config_file_path = Config.DEFAULT_CONFIG_PATH
         self.cfg = Config(self.config_file_path)
         self.cfg.load()
@@ -68,8 +70,8 @@ class GptTerminal:
             '/voice-name': Command(True, self.cfg.voice_name, 1, "Set the voice to be used"),
             '/voice-over': Command(True, self.cfg.voice_over, 0, "Toggle voice over highlighting"),
             '/voice-stop': Command(True, self.cfg.voice_stop, 0, "Toggle voice stop: period or newline"),
-            '/model': Command(True, self.cfg.model, 1, "GPT-3 Model. Possible options: davinci, curie, babbage, ada"),
-            '/temperature': Command(True, self.cfg.temperature, 1, "Provide a value between 0 and 1. Higher for more creative responses. Lower for more standard.")
+            '/model': Command(True, self.cfg.model, 1, "GPT Models. Possible options: chatgpt, davinci, curie, babbage, ada (or any custom trained model)"),
+            '/temperature': Command(True, self.cfg.temperature, 1, "Provide a value between 0 and 1. Higher for more diverse responses. Lower for more deterministic")
         }
         if advanced:
             return commands
@@ -140,11 +142,16 @@ class GptTerminal:
 
     def tokens_per_model(self):
         safety_gap = 10
-        if self.cfg.model == GptModel.davinci:
+        model_alias = alias_for_model(self.cfg.model)
+        if model_alias in ['chatgpt', 'davinci']:
             model_max_tokens = 4096
         else:
             model_max_tokens = 2048
         return model_max_tokens - safety_gap
+
+    def is_chat_model(self):
+        model_alias = alias_for_model(self.cfg.model)
+        return model_alias == 'chatgpt'
 
     def calc_max_tokens(self):
         total = self.tokens_per_model()
@@ -170,6 +177,7 @@ class GptTerminal:
         return self.max_tokens
 
     def reset_context(self, prompt, submit):
+        self.after_reset = True
         self.prompt = prompt
         current_prompt = f"\n{self.prompt}\n" if self.prompt else ""
         self.add_to_conversation(current_prompt, is_response=False, reset=True)
@@ -181,7 +189,7 @@ class GptTerminal:
 
     def run(self):
         self.shell = ShellHandler()
-        self.gpterm_intro = f"{self.colors.title}## GPTerm - Interact with a GPT-3 model via a terminal\n" \
+        self.gpterm_intro = f"{self.colors.title}## GPTerm - Interact with a GPT model via a terminal\n" \
                             f"Type {self.colors.info}/help{self.colors.title} to list available commands.{self.colors.end} " \
                             f"{self.colors.info}/exit{self.colors.title} or {self.colors.info}^C{self.colors.title} to quit.{self.colors.end}\n"
         self.shell.set_gpt_terminal(self)
@@ -225,6 +233,44 @@ class GptTerminal:
         else:
             self.add_to_conversation(f"{self.prompt}", is_response=False, reset=False)
 
+    def get_completion(self):
+        if self.is_chat_model():
+            return self.get_chat_completion()
+        else:
+            return self.get_text_completion()
+
+    def get_text_completion(self):
+        completion = openai.Completion.create(
+            headers={"source": "gpterm"},
+            engine=self.cfg.model,
+            prompt=self.prompt_input,
+            max_tokens=self.max_tokens,
+            n=1,
+            temperature=self.cfg.temperature,
+            stop=None,
+            stream=self.stream,
+            # presence_penalty=0,
+            # frequency_penalty=0,
+        )
+        return completion
+
+    def get_chat_completion(self):
+        completion = openai.ChatCompletion.create(
+            headers={"source": "gpterm"},
+            model=self.cfg.model,
+            messages=[
+                {"role": "user", "content": self.prompt_input},
+            ],
+            max_tokens=self.max_tokens,
+            n=1,
+            temperature=self.cfg.temperature,
+            stop=None,
+            stream=self.stream,
+            # presence_penalty=0,
+            # frequency_penalty=0,
+        )
+        return completion
+
     def submit_prompt(self, prompt):
         try:
             self.prompt = prompt
@@ -236,19 +282,7 @@ class GptTerminal:
 
             self.update_max_tokens()
             self.update_shell_prompt()
-
-            completion = openai.Completion.create(
-                headers={"source": "gpterm"},
-                engine=self.cfg.model.value,
-                prompt=self.prompt_input,
-                max_tokens=self.max_tokens,
-                n=1,
-                temperature=self.cfg.temperature,
-                stop=None,
-                stream=self.stream,
-                # presence_penalty=0,
-                # frequency_penalty=0,
-            )
+            completion = self.get_completion()
             self.handle_completion(completion)
             self.prompt_idx += 1
         except Exception as e:
@@ -343,24 +377,43 @@ class GptTerminal:
                     self.add_to_conversation("\n")
                     self.reset_response_state()
                     break
-                response = obj.choices[0].text
+                response = self.get_response(obj)
                 if self.debug:
                     print(f"[yellow]{response}[/]", end='')
 
-                if idx == 0 and response == '\n':
+                if idx == 0 and response == '\n':  # happens at any response from text completion
                     continue
 
-                self.add_to_conversation(response, is_response=True)
-                self.handle_response_line(response)
-                self.resp_start = False
+                if self.after_reset:
+                    if idx == 1 and response == '\n\n':  # happens at first response from chat completion
+                        continue
+
+                if response is not None:
+                    self.add_to_conversation(response, is_response=True)
+                    self.handle_response_line(response)
+                    self.resp_start = False
 
             if self.resp_line:
                 self.handle_response_line('', end=True)
 
             self.in_gpt_response = False
+            self.after_reset = False
             print("\n")
         else:
             print(completion.choices[0].text)
+
+    def get_response(self, obj):
+        if self.is_chat_model():
+            return self.get_chat_response(obj)
+        else:
+            return self.get_text_response(obj)
+
+    def get_text_response(self, obj):
+        return obj.choices[0].text
+
+    def get_chat_response(self, obj):
+        response = obj.choices[0].delta.content if 'content' in obj.choices[0].delta else None
+        return response
 
     def print_code_response(self):
         if self.resp_line == '\n' and self.code_block_idx == 0:

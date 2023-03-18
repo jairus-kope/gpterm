@@ -2,14 +2,6 @@ import enum
 from typing import NamedTuple
 
 
-class GptModel(enum.Enum):
-    # see: https://beta.openai.com/docs/models/gpt-3
-    davinci = "text-davinci-003"
-    curie = "text-curie-001"
-    babbage = "text-babbage-001"
-    ada = "text-ada-001"
-
-
 class Colors(enum.Enum):
     # using RL_PROMPT_START_IGNORE ('\001') and RL_PROMPT_END_IGNORE ('\002') to get the readline module
     # to ignore the color sequences in prompt when calculating cursor position
