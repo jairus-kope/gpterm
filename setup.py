@@ -15,6 +15,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'openai>=0.27.2',
+        'tiktoken>=0.3.2',
         'rich>=13.3.1',
         'pyyaml>=6.0',
     ],

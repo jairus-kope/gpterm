@@ -7,6 +7,7 @@ import time
 import datetime
 import openai
 import argparse
+import tiktoken
 from rich.prompt import Prompt
 from rich import print
 from rich.console import Console
@@ -81,7 +82,6 @@ class GptTerminal:
     def _setup_gpt(self):
         self.stream = True
         self.max_tokens = self.tokens_per_model()
-        self.chars_per_token = 1
 
     def _setup_code_format(self):
         self.code_format_directive = "\nAny code snippet in your responses must be inside a code block. respond yes if you will comply"
@@ -157,16 +157,18 @@ class GptTerminal:
         total = self.tokens_per_model()
         self.max_tokens = total - self.text_to_tokens(self.prompt_input)
 
-    def text_to_tokens(self, text, use_tokenizer=False):
-        if use_tokenizer:
-            # not sure if this runs fast enough on a low-end setup
-            try:
-                from transformers import GPT2TokenizerFast
-                tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-                return len(tokenizer(text)['input_ids'])
-            except ImportError:
-                self.print_error("Tokenizer requires module 'transformers'. Install it with: pip install transformers")
-        return math.ceil(len(text) / self.chars_per_token)
+    def text_to_tokens(self, text):
+        num_tokens = 0
+        try:
+            encoding = tiktoken.encoding_for_model(self.cfg.model)
+        except KeyError:
+            encoding = tiktoken.get_encoding("cl100k_base")
+
+        if self.cfg.model.startswith('gpt-3.5-') or self.cfg.model.startswith('gpt-4-'):
+            num_tokens += 4 + 2  # tokens for message header ("role": "user", "content": ) + response header (assistant)
+
+        num_tokens += len(encoding.encode(text))
+        return num_tokens
 
     def update_max_tokens(self):
         self.calc_max_tokens()

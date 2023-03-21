@@ -73,7 +73,7 @@ GPTerm provides the following features as supported by OpenAI's API:
 * Preserves conversation context including the option to reset it
 * Voiced output using text to speech (with a variety of voices to choose from)
 * Image Generation using a DALL·E model (*note that as the saying goes an image is worth a thousand tokens...*)
-* Model-3 selection and parameters
+* Model selection and parameters (including the **chatgpt** model which is set as default: gpt-3.5-turbo)
 * Displays number of remaining tokens for current conversation context before it is reset (Due to `max_tokens` limited by OpenAI's API)
 * Code blocks formatted with Syntax highlighting (experimental)
 
