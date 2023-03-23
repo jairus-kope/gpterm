@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="gpterm",
-    version="0.2.8",
+    version="0.2.9",
     author="Jairus",
     author_email="jairus.kope@gmail.com",
     description="A Terminal emulation to interact with OpenAI's GPT models",

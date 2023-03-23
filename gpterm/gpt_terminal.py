@@ -8,6 +8,7 @@ import datetime
 import openai
 import argparse
 import tiktoken
+import pkg_resources
 from rich.prompt import Prompt
 from rich import print
 from rich.console import Console
@@ -191,7 +192,8 @@ class GptTerminal:
 
     def run(self):
         self.shell = ShellHandler()
-        self.gpterm_intro = f"{self.colors.title}## GPTerm - Interact with a GPT model via a terminal\n" \
+        gpterm_version = pkg_resources.get_distribution('gpterm').version
+        self.gpterm_intro = f"{self.colors.title}## GPTerm {gpterm_version} - Interact with a GPT model via a terminal\n" \
                             f"Type {self.colors.info}/help{self.colors.title} to list available commands.{self.colors.end} " \
                             f"{self.colors.info}/exit{self.colors.title} or {self.colors.info}^C{self.colors.title} to quit.{self.colors.end}\n"
         self.shell.set_gpt_terminal(self)
